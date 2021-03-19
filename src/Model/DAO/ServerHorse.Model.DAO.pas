@@ -63,7 +63,10 @@ implementation
 
 uses
   System.SysUtils,
-  ServerHorse.Model.Connection, System.Classes;
+  ServerHorse.Model.Connection,
+  System.Classes,
+  GBJSON.Helper,
+  GBJSON.Interfaces;
 
 constructor TDAOGeneric<T>.Create;
 begin
@@ -131,7 +134,7 @@ var
   ateste: Integer;
   ateste2: string;
 begin
-  FDAO.Find;
+  FDAO.Find(False);
   Result := FDataSource.DataSet.ToJSONArray;
 end;
 
@@ -141,15 +144,35 @@ begin
 end;
 
 function TDAOGeneric<T>.Insert(const aJsonObject: TJsonObject): TJsonObject;
+var
+  aObj : T;
 begin
-  FDAO.Insert(TJson.JsonToObject<T>(aJsonObject));
-  Result := FDataSource.DataSet.ToJSONObject;
+  aObj := T.Create;
+  try
+    TGBJSONConfig.GetInstance.CaseDefinition(TCaseDefinition.cdLower);
+    TGBJSONDefault.Serializer<T>(False).JsonObjectToObject(aObj, aJsonObject);
+    aObj.fromJSONObject(aJsonObject);
+    FDAO.Insert(aObj);
+    Result := FDataSource.DataSet.ToJSONObject;
+  finally
+    aObj.Free;
+  end;
 end;
 
 function TDAOGeneric<T>.Update(const aJsonObject: TJsonObject): TJsonObject;
+var
+  aObj : T;
 begin
-  FDAO.Update(TJson.JsonToObject<T>(aJsonObject));
-  Result := FDataSource.DataSet.ToJSONObject;
+  aObj := T.Create;
+  try
+    TGBJSONConfig.GetInstance.CaseDefinition(TCaseDefinition.cdLower);
+    TGBJSONDefault.Serializer<T>(False).JsonObjectToObject(aObj, aJsonObject);
+    aObj.fromJSONObject(aJsonObject);
+    FDAO.Update(aObj);
+    Result := FDataSource.DataSet.ToJSONObject;
+  finally
+    aObj.Free;
+  end;
 end;
 
 end.
